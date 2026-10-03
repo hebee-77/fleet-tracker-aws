@@ -17,7 +17,6 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/drivers")
 @Validated
-@CrossOrigin(origins = "http://localhost:5173")
 public class DriverController {
 
     private final DriverService driverService;

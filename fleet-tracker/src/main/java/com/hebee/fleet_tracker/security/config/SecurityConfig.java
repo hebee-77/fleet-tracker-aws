@@ -1,7 +1,9 @@
 package com.hebee.fleet_tracker.security.config;
 
+import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,13 +29,20 @@ public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final List<String> allowedOrigins;
 
     public SecurityConfig(
             UserDetailsService userDetailsService,
-            JwtAuthenticationFilter jwtAuthenticationFilter) {
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            @Value("${app.cors.allowed-origins}") String allowedOrigins) {
 
         this.userDetailsService = userDetailsService;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+
+        this.allowedOrigins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isBlank())
+                .toList();
     }
 
     @Bean
@@ -44,7 +53,8 @@ public class SecurityConfig {
     @Bean
     DaoAuthenticationProvider authenticationProvider() {
 
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        DaoAuthenticationProvider provider =
+                new DaoAuthenticationProvider();
 
         provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
@@ -62,12 +72,10 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
 
-        CorsConfiguration configuration = new CorsConfiguration();
+        CorsConfiguration configuration =
+                new CorsConfiguration();
 
-        configuration.setAllowedOriginPatterns(List.of(
-        	    "http://localhost:5173",
-        	    "https://*.vercel.app"
-        	));
+        configuration.setAllowedOrigins(allowedOrigins);
 
         configuration.setAllowedMethods(List.of(
                 "GET",
@@ -91,28 +99,32 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(
+            HttpSecurity http) throws Exception {
 
         http
 
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors ->
+                        cors.configurationSource(corsConfigurationSource()))
 
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf ->
+                        csrf.disable())
 
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS))
 
                 .authenticationProvider(authenticationProvider())
 
                 .authorizeHttpRequests(auth -> auth
 
-                		.requestMatchers(
-                		        "/api/auth/**",
-                		        "/v3/api-docs/**",
-                		        "/swagger-ui/**",
-                		        "/swagger-ui.html",
-                		        "/fleet-tracker/**")
-                		.permitAll()
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/fleet-tracker/**")
+                        .permitAll()
 
                         .requestMatchers("/api/users/**")
                         .hasRole("ADMIN")
@@ -129,7 +141,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/analytics/**")
                         .hasAnyRole("ADMIN", "MANAGER")
 
-                        // Settings Module
                         .requestMatchers("/api/settings/**")
                         .hasAnyRole("ADMIN", "MANAGER")
 
