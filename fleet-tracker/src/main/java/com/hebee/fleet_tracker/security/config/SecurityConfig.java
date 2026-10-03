@@ -143,6 +143,9 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/settings/**")
                         .hasAnyRole("ADMIN", "MANAGER")
+                        
+                        .requestMatchers("/actuator/health")
+                        .permitAll()
 
                         .anyRequest()
                         .authenticated())
