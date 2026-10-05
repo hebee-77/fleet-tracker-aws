@@ -10,7 +10,7 @@ public class PasswordTest {
 
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
-        System.out.println(encoder.encode("admin123"));
+        System.out.println(encoder.encode("manager123"));
 
     }
 
